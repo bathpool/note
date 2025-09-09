@@ -8,7 +8,7 @@
     width: 100%;
     min-height: 100vh;
     padding-bottom: 50px;
-    background-color: lightsalmon;
+    background-color: rgb(122, 255, 211);
     display: flex;
     flex-wrap: wrap;
 }
