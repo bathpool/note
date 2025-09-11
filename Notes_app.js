@@ -24,9 +24,6 @@ addBtn.addEventListener(
     }
 )
 
-        
-
-
 
 const saveNotes = () => {
     //select all textareas inside elements with class "note"
@@ -102,7 +99,10 @@ const addNote = (text = "") => {
         const snapshotDoesExist = snapshot.exists()
         if (snapshotDoesExist) {
             const snapshotValues = snapshot.val()
+            console.log(snapshotValues)
+            console.log(Object.values(snapshotValues))
             return Object.values(snapshotValues)
+ 
         }
     })
 
