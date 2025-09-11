@@ -1,3 +1,21 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js"
+import { getDatabase,
+         ref,
+         push,
+         onValue,
+         remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"
+
+const firebaseConfig = {
+    databaseURL: "https://leads-tracker-app-b400c-default-rtdb.firebaseio.com/"
+}
+
+const app = initializeApp(firebaseConfig)
+const database = getDatabase(app)
+const referenceInDB = ref(database, "notes")
+
+
+
+
 const addBtn = document.querySelector('#addBtn');
 const main = document.querySelector("#main");
 addBtn.addEventListener(
@@ -6,26 +24,30 @@ addBtn.addEventListener(
     }
 )
 
-
-
-   
         
 
 
 
 const saveNotes = () => {
+    //select all textareas inside elements with class "note"
+    //notes is an object of nodeList
+    //nodelist is similar to array, but created by document.querySelectorAll
     const notes = document.querySelectorAll(".note textarea");
+
     const data = [];
-    console.log(notes);
+    //console.log(notes);
     notes.forEach(
+        //it is callback function, and node will be passed as argument to it
         (note) => { 
             data.push(note.value)
         }
     )
         if(data.length === 0){
-            localStorage.removeItem("notes")
+            //localStorage.removeItem("notes")
+            remove(referenceInDB)
         }else{
-            localStorage.setItem("notes",JSON.stringify(data))
+            //localStorage.setItem("notes",JSON.stringify(data))
+            push(referenceInDB, data)
         }
     
 }
@@ -37,8 +59,11 @@ const saveNotes = () => {
 // <textarea></textarea>
 // </div>  
 
+//(text = "") => {}  => default argument for parameter text is ""
+//arrow function
 const addNote = (text = "") => {
     const note = document.createElement("div");
+    //inheriting class "note" to div
     note.classList.add("note")
     note.innerHTML = `
     
@@ -67,10 +92,19 @@ const addNote = (text = "") => {
     saveNotes()
 }
 
+//self invoking function
 (
     function(){
     
-    const lsNotes =JSON.parse(localStorage.getItem("notes"));
+    //load notes as an array from local storage  
+    //const lsNotes =JSON.parse(localStorage.getItem("notes"));
+    const lsNotes = onValue(referenceInDB, function(snapshot) {
+        const snapshotDoesExist = snapshot.exists()
+        if (snapshotDoesExist) {
+            const snapshotValues = snapshot.val()
+            return Object.values(snapshotValues)
+        }
+    })
 
     if(lsNotes === null){
         addNote()
@@ -83,3 +117,4 @@ const addNote = (text = "") => {
     }
         }
 )()
+
