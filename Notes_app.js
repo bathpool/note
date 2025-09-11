@@ -111,7 +111,7 @@ const addNote = (text = "") => {
     }else
        { lsNotes.forEach(
             (lsNote) => {
-                addNote(lsNote[0])
+                addNote(lsNote[0].value)
             }
         )
     }
