@@ -44,7 +44,11 @@ const saveNotes = () => {
             remove(referenceInDB)
         }else{
             //localStorage.setItem("notes",JSON.stringify(data))
-            push(referenceInDB, data)
+            data.forEach(
+                (data) => {
+                    push(referenceInDB, data)
+                }
+            )
         }
     
 }
@@ -109,7 +113,7 @@ const addNote = (text = "") => {
     }else
        { lsNotes.forEach(
             (lsNote) => {
-                addNote(lsNote[0].value)
+                addNote(lsNote)
                 console.log(lsNote)
             }
         )
