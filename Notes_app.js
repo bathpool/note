@@ -99,8 +99,6 @@ const addNote = (text = "") => {
         const snapshotDoesExist = snapshot.exists()
         if (snapshotDoesExist) {
             const snapshotValues = snapshot.val()
-            console.log(snapshotValues)
-            console.log(Object.values(snapshotValues))
             return Object.values(snapshotValues)
  
         }
@@ -112,6 +110,7 @@ const addNote = (text = "") => {
        { lsNotes.forEach(
             (lsNote) => {
                 addNote(lsNote[0].value)
+                console.log(lsNote)
             }
         )
     }
