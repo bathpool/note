@@ -3,6 +3,8 @@ import { getDatabase,
          ref,
          push,
          onValue,
+         get,
+         set,
          remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"
 
 const firebaseConfig = {
@@ -44,11 +46,7 @@ const saveNotes = () => {
             remove(referenceInDB)
         }else{
             //localStorage.setItem("notes",JSON.stringify(data))
-            data.forEach(
-                (data) => {
-                    push(referenceInDB, data)
-                }
-            )
+            set(referenceInDB, data)
         }
     
 }
@@ -97,27 +95,31 @@ const addNote = (text = "") => {
 (
     function(){
     
+    let data = []
     //load notes as an array from local storage  
     //const lsNotes =JSON.parse(localStorage.getItem("notes"));
-    const lsNotes = onValue(referenceInDB, function(snapshot) {
-        const snapshotDoesExist = snapshot.exists()
-        if (snapshotDoesExist) {
-            const snapshotValues = snapshot.val()
-            return Object.values(snapshotValues)
- 
-        }
-    })
-
-    if(lsNotes === null){
-        addNote()
-    }else
-       { lsNotes.forEach(
-            (lsNote) => {
-                addNote(lsNote)
-                console.log(lsNote)
+    const lsNotes = get(referenceInDB).then(
+        (snapshot) => {
+            if(snapshot.exists()){
+                data = snapshot.val()
+                    
+                if(data === null){
+                    addNote()
+                }else{
+                    data.forEach(
+                        (lsNote) => {
+                            addNote(lsNote)
+                            //console.log(lsNote)
+                        }
+                    )
+                }
+            } else {
+                addNote()
             }
-        )
-    }
+               
+        }
+    )
+
         }
 )()
 
