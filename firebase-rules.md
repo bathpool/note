@@ -25,7 +25,7 @@ Apply these rules in the [Firebase Console](https://console.firebase.google.com/
 
 These rules allow any authenticated user to READ the old shared notes (needed for migration), but only WRITE to their own `notes/{uid}` path.
 
-### Step 2: After migration succeeds, tighten rules to this
+### Step 2: Final rules (supports images in notes)
 
 ```json
 {
@@ -33,10 +33,7 @@ These rules allow any authenticated user to READ the old shared notes (needed fo
     "notes": {
       "$uid": {
         ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid",
-        "$noteIndex": {
-          ".validate": "newData.isString() && newData.val().length <= 5000"
-        }
+        ".write": "$uid === auth.uid"
       }
     },
     ".read": false,
