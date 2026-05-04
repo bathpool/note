@@ -7,20 +7,30 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button id="addBtn">
-        <i class="fas fa-plus"></i>
-        Add Note
-    </button>
-    <div id="main">
-        <!-- <div class="note">
-            <div class="tool">
-                <i class="fas fa-save" ></i>
-                <i class="fas fa-trash" ></i>
+    <div id="auth-container">
+        <div id="auth-prompt">
+            <h2>Notes App</h2>
+            <p>Sign in to access your notes</p>
+            <button id="signInBtn">
+                <i class="fab fa-google"></i>
+                Sign in with Google
+            </button>
+        </div>
+    </div>
+    <div id="app-container" style="display: none;">
+        <div id="toolbar">
+            <button id="addBtn">
+                <i class="fas fa-plus"></i>
+                Add Note
+            </button>
+            <div id="user-info">
+                <span id="user-email"></span>
+                <button id="signOutBtn">Sign Out</button>
             </div>
-            <textarea></textarea>
-        </div> -->
+        </div>
+        <div id="main"></div>
     </div>
     <script src="https://kit.fontawesome.com/bf520e6492.js" crossorigin="anonymous"></script>
-    <script type="module" src="Notes_app.js" ></script>
+    <script type="module" src="Notes_app.js"></script>
 </body>
 </html>

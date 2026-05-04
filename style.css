@@ -4,9 +4,96 @@
     box-sizing: border-box;
     font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Auth screen */
+#auth-container {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: lightsalmon;
+}
+
+#auth-prompt {
+    text-align: center;
+    background-color: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#auth-prompt h2 {
+    margin-bottom: 10px;
+    color: #2d3436;
+}
+
+#auth-prompt p {
+    margin-bottom: 20px;
+    color: #636e72;
+}
+
+#signInBtn {
+    background-color: #2d3436;
+    color: white;
+    padding: 12px 24px;
+    border: 0;
+    outline: 0;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#signInBtn:hover {
+    background-color: #444;
+}
+
+#signInBtn i {
+    margin-right: 8px;
+}
+
+/* App toolbar */
+#toolbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #2d3436;
+    z-index: 100;
+}
+
+#user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    font-size: 14px;
+}
+
+#signOutBtn {
+    background-color: transparent;
+    color: #dfe6e9;
+    border: 1px solid #636e72;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+#signOutBtn:hover {
+    background-color: #636e72;
+    color: white;
+}
+
+/* Main notes area */
 #main{
     width: 100%;
     min-height: 100vh;
+    padding-top: 60px;
     padding-bottom: 50px;
     background-color: lightsalmon;
     display: flex;
@@ -14,15 +101,18 @@
 }
 
 #addBtn{
-    position: fixed;
-    right: 10px;
-    top: 10px;
-    background-color: #2d3436;
+    background-color: #00b894;
     color: white;
-    padding: 10px;
+    padding: 10px 16px;
     border: 0;
     outline: 0;
     border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#addBtn:hover {
+    background-color: #00a381;
 }
 
 .note{
@@ -30,14 +120,15 @@
     height: 400px;
     background-color: white;
     margin: 15px;
-    margin-top: 55px;
-
+    margin-top: 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .tool{
  width: 100%;
  background-color: #2d3436;
- border-top-right-radius: 2px;
- border-top-left-radius: 2px;
+ border-top-right-radius: 4px;
+ border-top-left-radius: 4px;
  color: white;
  padding: 5px;
  display: flex;
@@ -52,7 +143,7 @@
 .note textarea{
     border: none;
     width: 100%;
-    height: 100%;
+    height: calc(100% - 30px);
     resize: none;
     padding: 10px;
     font-size: 18px;

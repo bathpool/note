@@ -6,120 +6,156 @@ import { getDatabase,
          get,
          set,
          remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"
+import { getAuth,
+         signInWithPopup,
+         signOut,
+         onAuthStateChanged,
+         GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js"
 
 const firebaseConfig = {
-    databaseURL: "https://leads-tracker-app-b400c-default-rtdb.firebaseio.com/"
+    apiKey: "AIzaSyDummyKeyReplaceMeWithReal",
+    authDomain: "leads-tracker-app-b400c.firebaseapp.com",
+    databaseURL: "https://leads-tracker-app-b400c-default-rtdb.firebaseio.com/",
+    projectId: "leads-tracker-app-b400c"
 }
 
 const app = initializeApp(firebaseConfig)
 const database = getDatabase(app)
-const referenceInDB = ref(database, "notes")
+const auth = getAuth(app)
+const provider = new GoogleAuthProvider()
 
+const MAX_NOTE_LENGTH = 5000
+const MAX_NOTES_COUNT = 50
 
+// DOM elements
+const authContainer = document.querySelector('#auth-container')
+const appContainer = document.querySelector('#app-container')
+const signInBtn = document.querySelector('#signInBtn')
+const signOutBtn = document.querySelector('#signOutBtn')
+const userEmail = document.querySelector('#user-email')
+const addBtn = document.querySelector('#addBtn')
+const main = document.querySelector("#main")
 
+let referenceInDB = null
 
-const addBtn = document.querySelector('#addBtn');
-const main = document.querySelector("#main");
-addBtn.addEventListener(
-    "click", function(){
-        addNote()
+// --- Authentication ---
+signInBtn.addEventListener("click", () => {
+    signInWithPopup(auth, provider).catch((error) => {
+        console.error("Sign-in error:", error.message)
+    })
+})
+
+signOutBtn.addEventListener("click", () => {
+    signOut(auth).catch((error) => {
+        console.error("Sign-out error:", error.message)
+    })
+})
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        authContainer.style.display = "none"
+        appContainer.style.display = "block"
+        userEmail.textContent = user.email
+        referenceInDB = ref(database, `notes/${user.uid}`)
+        loadNotes()
+    } else {
+        authContainer.style.display = "flex"
+        appContainer.style.display = "none"
+        userEmail.textContent = ""
+        referenceInDB = null
+        main.innerHTML = ""
     }
-)
+})
 
+// --- Notes functionality ---
+addBtn.addEventListener("click", () => {
+    const noteCount = document.querySelectorAll(".note").length
+    if (noteCount >= MAX_NOTES_COUNT) {
+        alert(`Maximum of ${MAX_NOTES_COUNT} notes reached.`)
+        return
+    }
+    addNote()
+})
 
 const saveNotes = () => {
-    //select all textareas inside elements with class "note"
-    //notes is an object of nodeList
-    //nodelist is similar to array, but created by document.querySelectorAll
-    const notes = document.querySelectorAll(".note textarea");
+    if (!referenceInDB) return
 
-    const data = [];
-    //console.log(notes);
-    notes.forEach(
-        //it is callback function, and node will be passed as argument to it
-        (note) => { 
-            data.push(note.value)
+    const notes = document.querySelectorAll(".note textarea")
+    const data = []
+
+    notes.forEach((note) => {
+        const trimmed = note.value.trim()
+        if (trimmed.length > 0) {
+            data.push(trimmed.substring(0, MAX_NOTE_LENGTH))
         }
-    )
-        if(data.length === 0){
-            //localStorage.removeItem("notes")
-            remove(referenceInDB)
-        }else{
-            //localStorage.setItem("notes",JSON.stringify(data))
-            set(referenceInDB, data)
-        }
-    
+    })
+
+    if (data.length === 0) {
+        remove(referenceInDB)
+    } else {
+        set(referenceInDB, data)
+    }
 }
-//  <div class="note">
-// <div class="tool">
-//     <i class="fas fa-save" ></i>
-//     <i class="fas fa-trash" ></i>
-// </div>
-// <textarea></textarea>
-// </div>  
 
-//(text = "") => {}  => default argument for parameter text is ""
-//arrow function
+// Safe DOM construction — no innerHTML with user content (XSS prevention)
 const addNote = (text = "") => {
-    const note = document.createElement("div");
-    //inheriting class "note" to div
+    const noteCount = document.querySelectorAll(".note").length
+    if (noteCount >= MAX_NOTES_COUNT) return
+
+    const note = document.createElement("div")
     note.classList.add("note")
-    note.innerHTML = `
-    
-    <div class="tool">
-        <i class="save fas fa-save" ></i>
-         <i class="trash fas fa-trash" ></i>
-     </div>
-     <textarea>${text}</textarea> 
-    
-    `;
-    note.querySelector(".trash").addEventListener("click",function(){
+
+    const toolbar = document.createElement("div")
+    toolbar.classList.add("tool")
+
+    const saveIcon = document.createElement("i")
+    saveIcon.classList.add("save", "fas", "fa-save")
+
+    const trashIcon = document.createElement("i")
+    trashIcon.classList.add("trash", "fas", "fa-trash")
+
+    toolbar.appendChild(saveIcon)
+    toolbar.appendChild(trashIcon)
+
+    const textarea = document.createElement("textarea")
+    textarea.value = text
+    textarea.maxLength = MAX_NOTE_LENGTH
+
+    trashIcon.addEventListener("click", () => {
         note.remove()
         saveNotes()
-    }
- )
-    note.querySelector(".save").addEventListener("click",function(){
+    })
+
+    saveIcon.addEventListener("click", () => {
         saveNotes()
     })
-    note.querySelector("textarea").addEventListener(
-        "focusout",
-        function() {
-            saveNotes()
-        }
-    )
-    main.appendChild(note);
-    saveNotes()
+
+    textarea.addEventListener("focusout", () => {
+        saveNotes()
+    })
+
+    note.appendChild(toolbar)
+    note.appendChild(textarea)
+    main.appendChild(note)
 }
 
-//self invoking function
-(
-    function(){
-    
-    let data = []
-    //load notes as an array from local storage  
-    //const lsNotes =JSON.parse(localStorage.getItem("notes"));
-    const lsNotes = get(referenceInDB).then(
-        (snapshot) => {
-            if(snapshot.exists()){
-                data = snapshot.val()
-                    
-                if(data === null){
-                    addNote()
-                }else{
-                    data.forEach(
-                        (lsNote) => {
-                            addNote(lsNote)
-                            //console.log(lsNote)
-                        }
-                    )
-                }
+const loadNotes = () => {
+    main.innerHTML = ""
+    if (!referenceInDB) return
+
+    get(referenceInDB).then((snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val()
+            if (data && Array.isArray(data)) {
+                data.forEach((noteText) => {
+                    addNote(noteText)
+                })
             } else {
                 addNote()
             }
-               
+        } else {
+            addNote()
         }
-    )
-
-        }
-)()
+    })
+}
 
