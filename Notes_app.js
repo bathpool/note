@@ -57,7 +57,7 @@ onAuthStateChanged(auth, (user) => {
         appContainer.style.display = "block"
         userEmail.textContent = user.email
         referenceInDB = ref(database, `notes/${user.uid}`)
-        loadNotes()
+        migrateOldNotes(user.uid).then(() => loadNotes())
     } else {
         authContainer.style.display = "flex"
         appContainer.style.display = "none"
@@ -137,6 +137,24 @@ const addNote = (text = "") => {
     note.appendChild(toolbar)
     note.appendChild(textarea)
     main.appendChild(note)
+}
+
+// One-time migration: copy notes from old shared path to user-specific path
+const migrateOldNotes = async (uid) => {
+    const oldRef = ref(database, "notes")
+    const userRef = ref(database, `notes/${uid}`)
+
+    const userSnapshot = await get(userRef)
+    if (userSnapshot.exists()) return // user already has notes, skip migration
+
+    const oldSnapshot = await get(oldRef)
+    if (oldSnapshot.exists()) {
+        const oldData = oldSnapshot.val()
+        // Only migrate if old data is an array (the old format)
+        if (Array.isArray(oldData)) {
+            await set(userRef, oldData)
+        }
+    }
 }
 
 const loadNotes = () => {
