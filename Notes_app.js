@@ -88,7 +88,7 @@ const saveNotes = () => {
     editors.forEach((editor) => {
         const html = editor.innerHTML.trim()
         if (html.length > 0 && html !== "<br>") {
-            data.push(html.substring(0, MAX_NOTE_LENGTH))
+            data.push(html)
         }
     })
 
