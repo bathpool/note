@@ -144,15 +144,34 @@ const migrateOldNotes = async (uid) => {
     const oldRef = ref(database, "notes")
     const userRef = ref(database, `notes/${uid}`)
 
+    // Skip if user already has real notes (more than empty data)
     const userSnapshot = await get(userRef)
-    if (userSnapshot.exists()) return // user already has notes, skip migration
+    if (userSnapshot.exists()) {
+        const existing = userSnapshot.val()
+        if (Array.isArray(existing) && existing.some(n => n && n.trim().length > 0)) {
+            return // user has real notes, skip
+        }
+    }
 
     const oldSnapshot = await get(oldRef)
     if (oldSnapshot.exists()) {
         const oldData = oldSnapshot.val()
-        // Only migrate if old data is an array (the old format)
+        let notesArray = []
+
         if (Array.isArray(oldData)) {
-            await set(userRef, oldData)
+            notesArray = oldData.filter(n => n != null && typeof n === 'string')
+        } else if (typeof oldData === 'object') {
+            // Firebase may return object with numeric keys if array has gaps
+            const values = Object.entries(oldData)
+                .filter(([key]) => !isNaN(key)) // only numeric keys (old format)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([, val]) => val)
+                .filter(v => typeof v === 'string' && v.trim().length > 0)
+            notesArray = values
+        }
+
+        if (notesArray.length > 0) {
+            await set(userRef, notesArray)
         }
     }
 }
