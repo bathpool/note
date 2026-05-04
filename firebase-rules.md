@@ -4,6 +4,29 @@
 
 Apply these rules in the [Firebase Console](https://console.firebase.google.com/) under **Realtime Database > Rules**.
 
+### Step 1: Use these rules FIRST (allows migration of old notes)
+
+```json
+{
+  "rules": {
+    "notes": {
+      ".read": "auth != null",
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        "$noteIndex": {
+          ".validate": "newData.isString() && newData.val().length <= 5000"
+        }
+      }
+    }
+  }
+}
+```
+
+These rules allow any authenticated user to READ the old shared notes (needed for migration), but only WRITE to their own `notes/{uid}` path.
+
+### Step 2: After migration succeeds, tighten rules to this
+
 ```json
 {
   "rules": {
@@ -11,7 +34,6 @@ Apply these rules in the [Firebase Console](https://console.firebase.google.com/
       "$uid": {
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid",
-        ".validate": "newData.isString() || newData.hasChildren()",
         "$noteIndex": {
           ".validate": "newData.isString() && newData.val().length <= 5000"
         }
@@ -35,8 +57,10 @@ Apply these rules in the [Firebase Console](https://console.firebase.google.com/
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Select the project **leads-tracker-app-b400c**
 3. Navigate to **Realtime Database** → **Rules** tab
-4. Replace the existing rules with the JSON above
+4. Replace the existing rules with the **Step 1** rules above (allows migration)
 5. Click **Publish**
+6. Sign out and sign back into the Notes App — your old notes should appear
+7. Once your notes are migrated, come back and replace with the **Step 2** rules (stricter)
 
 ## Important: Enable Google Sign-In
 
