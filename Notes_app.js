@@ -6,8 +6,12 @@ import { getDatabase,
          remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"
 import { getAuth,
          signInWithPopup,
+         signInWithRedirect,
+         getRedirectResult,
          signOut,
          onAuthStateChanged,
+         browserLocalPersistence,
+         setPersistence,
          GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js"
 
 const firebaseConfig = {
@@ -21,6 +25,11 @@ const app = initializeApp(firebaseConfig)
 const database = getDatabase(app)
 const auth = getAuth(app)
 const provider = new GoogleAuthProvider()
+
+// Explicitly set persistence to local (survives browser restarts)
+setPersistence(auth, browserLocalPersistence)
+
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
 const MAX_NOTE_LENGTH = 5000
 const MAX_NOTES_COUNT = 50
@@ -36,9 +45,18 @@ const main = document.querySelector("#main")
 let referenceInDB = null
 
 signInBtn.addEventListener("click", () => {
-    signInWithPopup(auth, provider).catch((error) => {
-        console.error("Sign-in error:", error.message)
-    })
+    if (isMobile) {
+        signInWithRedirect(auth, provider)
+    } else {
+        signInWithPopup(auth, provider).catch((error) => {
+            console.error("Sign-in error:", error.message)
+        })
+    }
+})
+
+// Handle redirect result on page load (for mobile)
+getRedirectResult(auth).catch((error) => {
+    console.error("Redirect sign-in error:", error.message)
 })
 
 signOutBtn.addEventListener("click", () => {
