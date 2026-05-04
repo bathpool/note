@@ -13,7 +13,7 @@ import { getAuth,
          GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js"
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDummyKeyReplaceMeWithReal",
+    apiKey: "AIzaSyBPHMJrq0NBbykKUYapyjdT8ku8mipu9uo",
     authDomain: "leads-tracker-app-b400c.firebaseapp.com",
     databaseURL: "https://leads-tracker-app-b400c-default-rtdb.firebaseio.com/",
     projectId: "leads-tracker-app-b400c"
