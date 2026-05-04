@@ -1,8 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js"
 import { getDatabase,
          ref,
-         push,
-         onValue,
          get,
          set,
          remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"
@@ -27,7 +25,6 @@ const provider = new GoogleAuthProvider()
 const MAX_NOTE_LENGTH = 5000
 const MAX_NOTES_COUNT = 50
 
-// DOM elements
 const authContainer = document.querySelector('#auth-container')
 const appContainer = document.querySelector('#app-container')
 const signInBtn = document.querySelector('#signInBtn')
@@ -38,7 +35,6 @@ const main = document.querySelector("#main")
 
 let referenceInDB = null
 
-// --- Authentication ---
 signInBtn.addEventListener("click", () => {
     signInWithPopup(auth, provider).catch((error) => {
         console.error("Sign-in error:", error.message)
@@ -57,12 +53,7 @@ onAuthStateChanged(auth, (user) => {
         appContainer.style.display = "block"
         userEmail.textContent = user.email
         referenceInDB = ref(database, `notes/${user.uid}`)
-        migrateOldNotes(user.uid)
-            .then(() => loadNotes())
-            .catch((err) => {
-                console.error("Migration error:", err)
-                loadNotes()
-            })
+        loadNotes()
     } else {
         authContainer.style.display = "flex"
         appContainer.style.display = "none"
@@ -72,7 +63,6 @@ onAuthStateChanged(auth, (user) => {
     }
 })
 
-// --- Notes functionality ---
 addBtn.addEventListener("click", () => {
     const noteCount = document.querySelectorAll(".note").length
     if (noteCount >= MAX_NOTES_COUNT) {
@@ -102,7 +92,6 @@ const saveNotes = () => {
     }
 }
 
-// Safe DOM construction — no innerHTML with user content (XSS prevention)
 const addNote = (text = "") => {
     const noteCount = document.querySelectorAll(".note").length
     if (noteCount >= MAX_NOTES_COUNT) return
@@ -144,57 +133,6 @@ const addNote = (text = "") => {
     main.appendChild(note)
 }
 
-// One-time migration: copy notes from old shared path to user-specific path
-const migrateOldNotes = async (uid) => {
-    const userRef = ref(database, `notes/${uid}`)
-
-    // Skip if user already has real notes
-    const userSnapshot = await get(userRef)
-    if (userSnapshot.exists()) {
-        const existing = userSnapshot.val()
-        if (Array.isArray(existing) && existing.some(n => n && n.trim().length > 0)) {
-            return
-        }
-    }
-
-    // Read the entire notes node
-    const oldRef = ref(database, "notes")
-    const oldSnapshot = await get(oldRef)
-    if (!oldSnapshot.exists()) return
-
-    const oldData = oldSnapshot.val()
-    console.log("Migration: raw data at notes/", oldData)
-
-    let notesArray = []
-
-    if (Array.isArray(oldData)) {
-        // Direct array format
-        notesArray = oldData.filter(n => n != null && typeof n === 'string' && n.trim().length > 0)
-    } else if (typeof oldData === 'object') {
-        // Object format — extract string values from numeric or any non-uid keys
-        for (const [key, val] of Object.entries(oldData)) {
-            if (key === uid) continue // skip own node
-            if (typeof val === 'string' && val.trim().length > 0) {
-                notesArray.push(val)
-            } else if (Array.isArray(val) && key !== uid) {
-                // Could be another user's data or nested array
-                val.forEach(item => {
-                    if (typeof item === 'string' && item.trim().length > 0) {
-                        notesArray.push(item)
-                    }
-                })
-            }
-        }
-    }
-
-    console.log("Migration: extracted notes:", notesArray)
-
-    if (notesArray.length > 0) {
-        await set(userRef, notesArray)
-        console.log("Migration: notes saved to user path")
-    }
-}
-
 const loadNotes = () => {
     main.innerHTML = ""
     if (!referenceInDB) return
@@ -214,4 +152,3 @@ const loadNotes = () => {
         }
     })
 }
-
