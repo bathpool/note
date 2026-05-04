@@ -57,7 +57,12 @@ onAuthStateChanged(auth, (user) => {
         appContainer.style.display = "block"
         userEmail.textContent = user.email
         referenceInDB = ref(database, `notes/${user.uid}`)
-        migrateOldNotes(user.uid).then(() => loadNotes())
+        migrateOldNotes(user.uid)
+            .then(() => loadNotes())
+            .catch((err) => {
+                console.error("Migration error:", err)
+                loadNotes()
+            })
     } else {
         authContainer.style.display = "flex"
         appContainer.style.display = "none"
@@ -141,38 +146,52 @@ const addNote = (text = "") => {
 
 // One-time migration: copy notes from old shared path to user-specific path
 const migrateOldNotes = async (uid) => {
-    const oldRef = ref(database, "notes")
     const userRef = ref(database, `notes/${uid}`)
 
-    // Skip if user already has real notes (more than empty data)
+    // Skip if user already has real notes
     const userSnapshot = await get(userRef)
     if (userSnapshot.exists()) {
         const existing = userSnapshot.val()
         if (Array.isArray(existing) && existing.some(n => n && n.trim().length > 0)) {
-            return // user has real notes, skip
+            return
         }
     }
 
+    // Read the entire notes node
+    const oldRef = ref(database, "notes")
     const oldSnapshot = await get(oldRef)
-    if (oldSnapshot.exists()) {
-        const oldData = oldSnapshot.val()
-        let notesArray = []
+    if (!oldSnapshot.exists()) return
 
-        if (Array.isArray(oldData)) {
-            notesArray = oldData.filter(n => n != null && typeof n === 'string')
-        } else if (typeof oldData === 'object') {
-            // Firebase may return object with numeric keys if array has gaps
-            const values = Object.entries(oldData)
-                .filter(([key]) => !isNaN(key)) // only numeric keys (old format)
-                .sort(([a], [b]) => Number(a) - Number(b))
-                .map(([, val]) => val)
-                .filter(v => typeof v === 'string' && v.trim().length > 0)
-            notesArray = values
-        }
+    const oldData = oldSnapshot.val()
+    console.log("Migration: raw data at notes/", oldData)
 
-        if (notesArray.length > 0) {
-            await set(userRef, notesArray)
+    let notesArray = []
+
+    if (Array.isArray(oldData)) {
+        // Direct array format
+        notesArray = oldData.filter(n => n != null && typeof n === 'string' && n.trim().length > 0)
+    } else if (typeof oldData === 'object') {
+        // Object format — extract string values from numeric or any non-uid keys
+        for (const [key, val] of Object.entries(oldData)) {
+            if (key === uid) continue // skip own node
+            if (typeof val === 'string' && val.trim().length > 0) {
+                notesArray.push(val)
+            } else if (Array.isArray(val) && key !== uid) {
+                // Could be another user's data or nested array
+                val.forEach(item => {
+                    if (typeof item === 'string' && item.trim().length > 0) {
+                        notesArray.push(item)
+                    }
+                })
+            }
         }
+    }
+
+    console.log("Migration: extracted notes:", notesArray)
+
+    if (notesArray.length > 0) {
+        await set(userRef, notesArray)
+        console.log("Migration: notes saved to user path")
     }
 }
 
