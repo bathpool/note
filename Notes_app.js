@@ -5,7 +5,7 @@ import { getDatabase,
          set,
          remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"
 import { getAuth,
-         signInWithPopup,
+         signInWithCredential,
          signOut,
          onAuthStateChanged,
          browserLocalPersistence,
@@ -19,10 +19,18 @@ const firebaseConfig = {
     projectId: "leads-tracker-app-b400c"
 }
 
+// Google OAuth 2.0 Web client ID (NOT a secret — safe to ship in client code).
+// Find it in Google Cloud Console > APIs & Services > Credentials > "OAuth 2.0
+// Client IDs" > the "Web client" entry. It looks like:
+//   123456789012-abcdef....apps.googleusercontent.com
+// IMPORTANT: that client's "Authorized JavaScript origins" must include the
+// exact origin the app is served from (e.g. https://<your-app>.azurestaticapps.net
+// and any custom domain), or sign-in will silently fail.
+const GOOGLE_CLIENT_ID = "1005331113501-aoejja0ev228eh4oq6tf8cte2p31dsv9.apps.googleusercontent.com"
+
 const app = initializeApp(firebaseConfig)
 const database = getDatabase(app)
 const auth = getAuth(app)
-const provider = new GoogleAuthProvider()
 
 setPersistence(auth, browserLocalPersistence)
 
@@ -34,7 +42,8 @@ const MAX_NOTE_SIZE_BYTES = 3 * 1024 * 1024
 
 const authContainer = document.querySelector('#auth-container')
 const appContainer = document.querySelector('#app-container')
-const signInBtn = document.querySelector('#signInBtn')
+const gsiButton = document.querySelector('#gsi-button')
+const authError = document.querySelector('#auth-error')
 const signOutBtn = document.querySelector('#signOutBtn')
 const userEmail = document.querySelector('#user-email')
 const addBtn = document.querySelector('#addBtn')
@@ -42,13 +51,52 @@ const main = document.querySelector("#main")
 
 let referenceInDB = null
 
-signInBtn.addEventListener("click", () => {
-    signInWithPopup(auth, provider).catch((error) => {
-        console.error("Sign-in error:", error.message)
+const showAuthError = (message) => {
+    if (authError) authError.textContent = message
+    console.error("Sign-in error:", message)
+}
+
+// Google Identity Services issues the ID token directly in this page (no
+// firebaseapp.com redirect/iframe), then we exchange it locally with
+// signInWithCredential. This avoids the cross-domain sessionStorage that iOS
+// Safari / standalone PWAs block (the "missing initial state" error).
+const handleCredentialResponse = (response) => {
+    if (!response?.credential) {
+        showAuthError("No credential returned from Google.")
+        return
+    }
+    const credential = GoogleAuthProvider.credential(response.credential)
+    signInWithCredential(auth, credential).catch((error) => {
+        showAuthError(error.message)
     })
-})
+}
+
+const initGoogleSignIn = () => {
+    // The GIS library loads asynchronously; wait until it's ready.
+    if (!window.google?.accounts?.id) {
+        setTimeout(initGoogleSignIn, 100)
+        return
+    }
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+    })
+    google.accounts.id.renderButton(gsiButton, {
+        theme: "outline",
+        size: "large",
+        type: "standard",
+        text: "signin_with",
+        shape: "pill",
+    })
+}
+
+initGoogleSignIn()
 
 signOutBtn.addEventListener("click", () => {
+    // Prevent GIS from silently auto-selecting the same account on next visit.
+    if (window.google?.accounts?.id) {
+        google.accounts.id.disableAutoSelect()
+    }
     signOut(auth).catch((error) => {
         console.error("Sign-out error:", error.message)
     })
@@ -58,6 +106,7 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         authContainer.style.display = "none"
         appContainer.style.display = "block"
+        if (authError) authError.textContent = ""
         userEmail.textContent = user.email
         referenceInDB = ref(database, `notes/${user.uid}`)
         loadNotes()
