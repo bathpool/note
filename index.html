@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notes Taking App</title>
+    <link rel="manifest" href="/site.webmanifest">
+    <!-- Force the Home Screen icon to open in real Safari, not a standalone
+         web view. Google's OAuth policy blocks sign-in from embedded/standalone
+         web views, so standalone mode breaks Google login on iOS. -->
+    <meta name="apple-mobile-web-app-capable" content="no">
+    <meta name="mobile-web-app-capable" content="no">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
