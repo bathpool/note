@@ -26,7 +26,7 @@ const firebaseConfig = {
 // IMPORTANT: that client's "Authorized JavaScript origins" must include the
 // exact origin the app is served from (e.g. https://<your-app>.azurestaticapps.net
 // and any custom domain), or sign-in will silently fail.
-const GOOGLE_CLIENT_ID = "REPLACE_WITH_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"
+const GOOGLE_CLIENT_ID = "1005331113501-aoejja0ev228eh4oq6tf8cte2p31dsv9.apps.googleusercontent.com"
 
 const app = initializeApp(firebaseConfig)
 const database = getDatabase(app)
